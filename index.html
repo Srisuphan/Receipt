@@ -142,7 +142,7 @@ const DOC_TYPES=[
   {id:'receipt',label:'ใบเสร็จรับเงิน',sub:'Receipt',icon:'✅'},
 ];
 const SELLER={name:'ห้างหุ้นส่วนจำกัด ศรีสุพรรณ (2524)',addr:'1492/12 ถ.ขุขันธ์ ต.เมืองใต้ อ.เมือง จ.ศรีสะเกษ 33000',tax:'0 3335 60001 77 1',tel:'083-5303512',contact:'นายณัฐวุฒิ ตรีรัตนชวลิต'};
-const ROWS_PER_PAGE=20;
+const ROWS_PER_PAGE=15;
 
 function saveSession(u){try{sessionStorage.setItem(SESSION_KEY,JSON.stringify(u));}catch(e){}}
 function loadSession(){try{const s=sessionStorage.getItem(SESSION_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
@@ -486,6 +486,8 @@ function custFieldsEdit(o, prefix, useDate){
     </div>
     <div class="form-field full"><label>ที่อยู่</label>
       <input id="${prefix}addr" value="${cleanAddr(o.customerAddr).replace(/"/g,'&quot;')}" style="${FS}" placeholder="ที่อยู่"></div>
+    <div class="form-field"><label>สาขา (เช่น สำนักงานใหญ่ / สาขาที่ 1)</label>
+      <input id="${prefix}branch" value="${(o.customerBranch||'สำนักงานใหญ่').replace(/"/g,'&quot;')}" style="${FS}" placeholder="สำนักงานใหญ่"></div>
     <div class="form-field"><label>เลขผู้เสียภาษี</label>
       <input id="${prefix}tax" value="${(o.customerTax||'').replace(/"/g,'&quot;')}" style="${FS}" placeholder="เลขผู้เสียภาษี"></div>
     <div class="form-field"><label>เบอร์โทรศัพท์</label>
@@ -545,82 +547,163 @@ function buildInvoiceHTML(order,docTypeId,isCopy){
   const showVat=docTypeId==='tax';const isR=docTypeId==='receipt';
   const F='font-family:Sarabun,Arial,sans-serif;font-size:10pt;';
   const B='border:1px solid #000;';
-  const TD=`${F}${B}padding:5px 7px;`;const TDC=`${TD}text-align:center;`;const TDR=`${TD}text-align:right;`;
+  const TD=`${F}${B}padding:5px 7px;`;
+  const TDC=`${TD}text-align:center;`;
+  const TDR=`${TD}text-align:right;`;
   const TH=`${F}${B}padding:5px 7px;font-weight:bold;background:#f0f0f0;text-align:center;`;
   const pb=isCopy?'page-break-before:always;':'';
+
   const bN=order.customerName||order.agency||'-';
   const bA=cleanAddr(order.customerAddr)||'-';
   const bP=order.customerPhone||'-';
   const bT=order.customerTax||'-';
-  const iRows=order.items.map((it,i)=>`<tr>
-    <td style="${TDC}">${i+1}</td><td style="${TD}">${it.product||''}</td>
-    <td style="${TDC}">${it.qty}</td><td style="${TDC}">${it.unit||''}</td>
-    <td style="${TDR}">${numFmt(it.price)}</td><td style="${TDR}">${numFmt(it.qty*it.price)}</td>
-  </tr>`).join('');
-  const blank=Math.max(0,ROWS_PER_PAGE-order.items.length);
-  const bRows=Array(blank).fill('').map(()=>`<tr style="height:22px"><td style="${TDC}"></td><td style="${TD}"></td><td style="${TDC}"></td><td style="${TDC}"></td><td style="${TDR}"></td><td style="${TDR}"></td></tr>`).join('');
-  return `<div style="${F}${pb}padding:14px 20px;width:100%;">
-  <div style="${F}text-align:center;font-size:16pt;font-weight:bold;letter-spacing:1px;border-bottom:2.5px solid #000;padding-bottom:7px;margin-bottom:10px;">${dt.label}${isCopy?' (สำเนา)':''}</div>
-  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;"><tr>
-    <td style="${F}vertical-align:top;padding-right:10px;">
-      <div style="${F}font-weight:bold;font-size:12pt;">${SELLER.name}</div>
-      <div style="${F}margin-top:2px;">${SELLER.addr}</div>
-      <div style="${F}margin-top:2px;">โทรศัพท์: ${SELLER.tel}</div>
-      <div style="${F}margin-top:2px;">เลขประจำตัวผู้เสียภาษี: ${SELLER.tax} &#9746; สำนักงานใหญ่</div>
-    </td>
-    <td style="${F}vertical-align:top;text-align:right;white-space:nowrap;width:1%;">
-      <div style="${F}font-size:11pt;">เลขที่: <strong>${order.ref}</strong></div>
-      <div style="${F}margin-top:5px;">${order.timestamp?`วันที่: <strong>${order.timestamp}</strong>`:`วันที่: ......................................................`}</div>
-      ${isR?`<div style="${F}margin-top:8px;color:#0a5e3a;font-size:12pt;font-weight:bold;">&#10003; ชำระแล้ว</div>`:''}
-    </td>
-  </tr></table>
-  <table style="width:100%;border-collapse:collapse;border:1px solid #000;margin-bottom:10px;"><tr>
-    <td style="${F}padding:6px 9px;vertical-align:top;width:55%;border-right:1px solid #000;">
-      <div style="${F}"><strong>ผู้ซื้อ:</strong> ${bN}</div>
-      <div style="${F}margin-top:4px;"><strong>ที่อยู่:</strong> ${bA}</div>
-    </td>
-    <td style="${F}padding:6px 9px;vertical-align:top;">
-      <div style="${F}"><strong>โทร:</strong> ${bP}</div>
-      <div style="${F}margin-top:4px;"><strong>เลขผู้เสียภาษีผู้ซื้อ:</strong> ${bT}</div>
-    </td>
-  </tr></table>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr>
-      <th style="${TH}width:38px;">ลำดับ</th><th style="${TH}">รายการสินค้า</th>
-      <th style="${TH}width:55px;">จำนวน</th><th style="${TH}width:55px;">หน่วย</th>
-      <th style="${TH}width:95px;">ราคา/หน่วย</th><th style="${TH}width:110px;">จำนวนเงิน</th>
-    </tr></thead>
-    <tbody>${iRows}${bRows}</tbody>
-    <tfoot><tr>
-      <td colspan="4" style="${F}${B}padding:6px 9px;font-size:9.5pt;color:#444;vertical-align:top;">หมายเหตุ: ___________________________</td>
-      <td colspan="2" style="${F}${B}padding:6px 9px;vertical-align:top;">
-        ${showVat?`<div style="${F}display:flex;justify-content:space-between;margin-bottom:3px;"><span>ราคารวม (ก่อน VAT):</span><span>${numFmt(sub)} บาท</span></div>
-        <div style="${F}display:flex;justify-content:space-between;padding-bottom:5px;border-bottom:1px solid #000;"><span>ภาษีมูลค่าเพิ่ม 7%:</span><span>${numFmt(vat)} บาท</span></div>`:''}
-        <div style="${F}display:flex;justify-content:space-between;font-weight:bold;font-size:11pt;margin-top:5px;"><span>รวมทั้งสิ้น:</span><span>${numFmt(total)} บาท</span></div>
-      </td>
-    </tr></tfoot>
-  </table>
-  <div style="${F}margin-top:6px;padding:5px 9px;border:1px solid #ccc;">จำนวนเงิน (ตัวอักษร): <strong>${bahtText(total)}</strong></div>
-  <table style="width:100%;border-collapse:collapse;margin-top:28px;"><tr>
-    <td style="${F}text-align:center;padding:0 10px;">
-      <div style="${F}">ลงชื่อ..................................................${isR?'ผู้รับเงิน':'ผู้รับสินค้า'}</div>
-      <div style="${F}margin-top:6px;">(...................................................)</div>
-      <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
-    </td>
-    <td style="${F}text-align:center;padding:0 10px;">
-      <div style="${F}">ลงชื่อ..................................................${isR?'ผู้จ่ายเงิน':'ผู้ส่งสินค้า'}</div>
-      <div style="${F}margin-top:6px;">( ${SELLER.contact} )</div>
-      <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
-    </td>
-  </tr></table>
-</div>`;}
+  const bBranch=order.customerBranch||'สำนักงานใหญ่';
+  const isHQ=bBranch.includes('ใหญ่')||bBranch.toUpperCase()==='HQ';
 
+  const iRows=order.items.map((it,i)=>`<tr>
+    <td style="${TDC}">${i+1}</td>
+    <td style="${TD}">${it.product||''}</td>
+    <td style="${TDC}">${it.qty}</td>
+    <td style="${TDC}">${it.unit||''}</td>
+    <td style="${TDR}">${numFmt(it.price)}</td>
+    <td style="${TDR}">${numFmt(it.qty*it.price)}</td>
+  </tr>`).join('');
+
+  const blank=Math.max(0,ROWS_PER_PAGE-order.items.length);
+  const bRows=Array(blank).fill('').map(()=>`<tr style="height:22px">
+    <td style="${TDC}"></td><td style="${TD}"></td><td style="${TDC}"></td>
+    <td style="${TDC}"></td><td style="${TDR}"></td><td style="${TDR}"></td>
+  </tr>`).join('');
+
+  // ทุกอย่างอยู่ใน table เดียว — thead จะ repeat ทุกหน้าโดย browser
+  return `<div style="${F}${pb}padding:12px 18px;width:100%;">
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+    <colgroup>
+      <col style="width:38px;">   <!-- ลำดับ -->
+      <col>                       <!-- รายการสินค้า — auto = กว้างที่สุด -->
+      <col style="width:52px;">   <!-- จำนวน -->
+      <col style="width:58px;">   <!-- หน่วย -->
+      <col style="width:88px;">   <!-- ราคา/หน่วย -->
+      <col style="width:100px;">  <!-- จำนวนเงิน -->
+    </colgroup>
+
+    <thead>
+      <!-- ชื่อเอกสาร -->
+      <tr>
+        <td colspan="6" style="${F}text-align:center;font-size:15pt;font-weight:bold;
+            letter-spacing:1px;border-bottom:2.5px solid #000;padding-bottom:7px;padding-top:2px;">
+          ${dt.label}${isCopy?' (สำเนา)':''}
+        </td>
+      </tr>
+      <!-- ข้อมูลผู้ขาย + เลขที่/วันที่ -->
+      <tr>
+        <td colspan="4" style="${F}vertical-align:top;padding:6px 4px 6px 0;">
+          <div style="${F}font-weight:bold;font-size:11.5pt;">${SELLER.name}</div>
+          <div style="${F}margin-top:2px;">${SELLER.addr}</div>
+          <div style="${F}margin-top:2px;">โทรศัพท์: ${SELLER.tel}</div>
+          <div style="${F}margin-top:2px;">เลขประจำตัวผู้เสียภาษี: ${SELLER.tax} &#9746; สำนักงานใหญ่</div>
+        </td>
+        <td colspan="2" style="${F}vertical-align:top;text-align:right;padding:6px 0;">
+          <div style="${F}font-size:11pt;">เลขที่: <strong>${order.ref}</strong></div>
+          <div style="${F}margin-top:4px;">${order.timestamp
+            ?`วันที่: <strong>${order.timestamp}</strong>`
+            :`วันที่: ......................................................`}</div>
+          ${isR?`<div style="${F}margin-top:6px;color:#0a5e3a;font-size:11pt;font-weight:bold;">&#10003; ชำระแล้ว</div>`:''}
+        </td>
+      </tr>
+      <!-- ข้อมูลผู้ซื้อ -->
+      <tr>
+        <td colspan="3" style="${F}${B}padding:6px 9px;vertical-align:top;">
+          <div style="${F}"><strong>ผู้ซื้อ:</strong> ${bN}</div>
+          <div style="${F}margin-top:3px;"><strong>ที่อยู่:</strong> ${bA}</div>
+        </td>
+        <td colspan="3" style="${F}${B}padding:6px 9px;vertical-align:top;border-left:none;">
+          <div style="${F}"><strong>โทร:</strong> ${bP}</div>
+          <div style="${F}margin-top:3px;">
+            <strong>เลขผู้เสียภาษีผู้ซื้อ:</strong> ${bT}
+            &nbsp;${isHQ?'&#9746; สำนักงานใหญ่':`&#9746; สาขา: ${bBranch}`}
+          </div>
+        </td>
+      </tr>
+      <!-- spacer -->
+      <tr><td colspan="6" style="padding:2px 0;"></td></tr>
+      <!-- หัวคอลัมน์ตาราง -->
+      <tr>
+        <th style="${TH}">ลำดับ</th>
+        <th style="${TH}text-align:left;">รายการสินค้า</th>
+        <th style="${TH}">จำนวน</th>
+        <th style="${TH}">หน่วย</th>
+        <th style="${TH}">ราคา/หน่วย</th>
+        <th style="${TH}">จำนวนเงิน</th>
+      </tr>
+    </thead>
+
+    <tbody>${iRows}${bRows}</tbody>
+
+    <tfoot>
+      <tr>
+        <td colspan="4" style="${F}${B}padding:6px 9px;font-size:9.5pt;color:#444;vertical-align:top;">
+          หมายเหตุ: ___________________________
+        </td>
+        <td colspan="2" style="${F}${B}padding:6px 9px;vertical-align:top;">
+          ${showVat?`
+          <div style="${F}display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span>ราคารวม (ก่อน VAT):</span><span>${numFmt(sub)} บาท</span>
+          </div>
+          <div style="${F}display:flex;justify-content:space-between;padding-bottom:5px;border-bottom:1px solid #000;">
+            <span>ภาษีมูลค่าเพิ่ม 7%:</span><span>${numFmt(vat)} บาท</span>
+          </div>`:''}
+          <div style="${F}display:flex;justify-content:space-between;font-weight:bold;font-size:11pt;margin-top:5px;">
+            <span>รวมทั้งสิ้น:</span><span>${numFmt(total)} บาท</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="6" style="${F}padding:5px 0;border:1px solid #ccc;padding:5px 9px;">
+          จำนวนเงิน (ตัวอักษร): <strong>${bahtText(total)}</strong>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" style="${F}text-align:center;padding:24px 10px 8px;">
+          <div style="${F}">ลงชื่อ..................................................${isR?'ผู้รับเงิน':'ผู้รับสินค้า'}</div>
+          <div style="${F}margin-top:6px;">(...................................................)</div>
+          <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
+        </td>
+        <td colspan="3" style="${F}text-align:center;padding:24px 10px 8px;">
+          <div style="${F}">ลงชื่อ..................................................${isR?'ผู้จ่ายเงิน':'ผู้ส่งสินค้า'}</div>
+          <div style="${F}margin-top:6px;">( ${SELLER.contact} )</div>
+          <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
+        </td>
+      </tr>
+    </tfoot>
+
+  </table>
+</div>`;
+}
 function printInvoice(order,docTypeId){
   const pa=document.getElementById('printArea');
-  pa.innerHTML=`<div style="font-family:Sarabun,Arial,sans-serif;">${buildInvoiceHTML(order,docTypeId,false)}${buildInvoiceHTML(order,docTypeId,true)}</div>`;
-  pa.style.display='block';document.getElementById('app').style.display='none';
+  // CSS พิเศษสำหรับการพิมพ์ — thead repeat ทุกหน้า
+  const printCSS=`<style>
+    @media print {
+      @page { margin: 12mm 14mm; size: A4; }
+      body { margin: 0; }
+      table { border-collapse: collapse; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      tr { page-break-inside: avoid; }
+      .page-doc { page-break-after: always; }
+      .page-doc:last-child { page-break-after: auto; }
+    }
+  </style>`;
+  pa.innerHTML=printCSS+`<div style="font-family:Sarabun,Arial,sans-serif;">
+    <div class="page-doc">${buildInvoiceHTML(order,docTypeId,false)}</div>
+    <div class="page-doc">${buildInvoiceHTML(order,docTypeId,true)}</div>
+  </div>`;
+  pa.style.display='block';
+  document.getElementById('app').style.display='none';
   window.print();
-  pa.style.display='none';document.getElementById('app').style.display='';
+  pa.style.display='none';
+  document.getElementById('app').style.display='';
 }
 
 function setupAC(iId,uId,pId){
@@ -668,6 +751,7 @@ function getCustFromDom(prefix,useDate){
   return{
     customerName:document.getElementById(prefix+'cname')?.value||'',
     customerAddr:document.getElementById(prefix+'addr')?.value||'',
+    customerBranch:document.getElementById(prefix+'branch')?.value||'สำนักงานใหญ่',
     customerTax:document.getElementById(prefix+'tax')?.value||'',
     customerPhone:document.getElementById(prefix+'phone')?.value||'',
     timestamp:useDate?(document.getElementById(prefix+'date')?.value||''):'',
@@ -681,15 +765,16 @@ async function doSave(ref,agency,items,action,custData){
       timestamp:custData.timestamp||null,
       customer_name:custData.customerName||'',
       customer_addr:custData.customerAddr||'',
+      customer_branch:custData.customerBranch||'สำนักงานใหญ่',
       customer_phone:custData.customerPhone||'',
       customer_tax:custData.customerTax||''
     });
   } else {
-    // updateOrder: อัปเดต customer fields ด้วย
     await sbPatch('orders',`ref=eq.${encodeURIComponent(ref)}`,{
       timestamp:custData.timestamp||null,
       customer_name:custData.customerName||'',
       customer_addr:custData.customerAddr||'',
+      customer_branch:custData.customerBranch||'สำนักงานใหญ่',
       customer_phone:custData.customerPhone||'',
       customer_tax:custData.customerTax||''
     });
@@ -712,6 +797,7 @@ async function loadOrders(){
       timestamp:fmtTs(o.timestamp||o.created_at||''),
       customerName:o.customer_name||'',
       customerAddr:o.customer_addr||'',
+      customerBranch:o.customer_branch||'สำนักงานใหญ่',
       customerPhone:o.customer_phone||'',
       customerTax:o.customer_tax||'',
       items:(items||[]).filter(i=>i.order_ref===o.ref).map(i=>({product:i.product,unit:i.unit,qty:Number(i.qty),price:Number(i.price)}))
