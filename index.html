@@ -551,7 +551,6 @@ function buildInvoiceHTML(order,docTypeId,isCopy){
   const TDC=`${TD}text-align:center;`;
   const TDR=`${TD}text-align:right;`;
   const TH=`${F}${B}padding:5px 7px;font-weight:bold;background:#f0f0f0;text-align:center;`;
-  const pb=isCopy?'page-break-before:always;':'';
 
   const bN=order.customerName||order.agency||'-';
   const bA=cleanAddr(order.customerAddr)||'-';
@@ -576,15 +575,15 @@ function buildInvoiceHTML(order,docTypeId,isCopy){
   </tr>`).join('');
 
   // ทุกอย่างอยู่ใน table เดียว — thead จะ repeat ทุกหน้าโดย browser
-  return `<div style="${F}${pb}padding:12px 18px;width:100%;">
-  <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+  return `
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:Sarabun,Arial,sans-serif;font-size:10pt;">
     <colgroup>
-      <col style="width:38px;">   <!-- ลำดับ -->
-      <col>                       <!-- รายการสินค้า — auto = กว้างที่สุด -->
-      <col style="width:52px;">   <!-- จำนวน -->
-      <col style="width:58px;">   <!-- หน่วย -->
-      <col style="width:88px;">   <!-- ราคา/หน่วย -->
-      <col style="width:100px;">  <!-- จำนวนเงิน -->
+      <col style="width:36px;">
+      <col>
+      <col style="width:50px;">
+      <col style="width:56px;">
+      <col style="width:86px;">
+      <col style="width:98px;">
     </colgroup>
 
     <thead>
@@ -642,18 +641,18 @@ function buildInvoiceHTML(order,docTypeId,isCopy){
 
     <tfoot>
       <tr>
-        <td colspan="4" style="${F}${B}padding:6px 9px;font-size:9.5pt;color:#444;vertical-align:top;">
+        <td colspan="2" style="${F}${B}padding:6px 9px;font-size:9.5pt;color:#444;vertical-align:top;">
           หมายเหตุ: ___________________________
         </td>
-        <td colspan="2" style="${F}${B}padding:6px 9px;vertical-align:top;">
+        <td colspan="4" style="${F}${B}padding:5px 9px;vertical-align:top;">
           ${showVat?`
-          <div style="${F}display:flex;justify-content:space-between;margin-bottom:3px;">
-            <span>ราคารวม (ก่อน VAT):</span><span>${numFmt(sub)} บาท</span>
+          <div style="${F}display:flex;justify-content:space-between;gap:12px;margin-bottom:3px;white-space:nowrap;">
+            <span>ราคารวม (ก่อน VAT):</span><span>${numFmt(sub)}</span>
           </div>
-          <div style="${F}display:flex;justify-content:space-between;padding-bottom:5px;border-bottom:1px solid #000;">
-            <span>ภาษีมูลค่าเพิ่ม 7%:</span><span>${numFmt(vat)} บาท</span>
+          <div style="${F}display:flex;justify-content:space-between;gap:12px;padding-bottom:5px;border-bottom:1px solid #000;white-space:nowrap;">
+            <span>ภาษีมูลค่าเพิ่ม 7%:</span><span>${numFmt(vat)}</span>
           </div>`:''}
-          <div style="${F}display:flex;justify-content:space-between;font-weight:bold;font-size:11pt;margin-top:5px;">
+          <div style="${F}display:flex;justify-content:space-between;gap:12px;font-weight:bold;font-size:11pt;margin-top:4px;white-space:nowrap;">
             <span>รวมทั้งสิ้น:</span><span>${numFmt(total)} บาท</span>
           </div>
         </td>
@@ -664,41 +663,46 @@ function buildInvoiceHTML(order,docTypeId,isCopy){
         </td>
       </tr>
       <tr>
-        <td colspan="3" style="${F}text-align:center;padding:24px 10px 8px;">
-          <div style="${F}">ลงชื่อ..................................................${isR?'ผู้รับเงิน':'ผู้รับสินค้า'}</div>
-          <div style="${F}margin-top:6px;">(...................................................)</div>
-          <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
-        </td>
-        <td colspan="3" style="${F}text-align:center;padding:24px 10px 8px;">
-          <div style="${F}">ลงชื่อ..................................................${isR?'ผู้จ่ายเงิน':'ผู้ส่งสินค้า'}</div>
-          <div style="${F}margin-top:6px;">( ${SELLER.contact} )</div>
-          <div style="${F}margin-top:3px;font-size:9pt;">วันที่............................................</div>
+        <td colspan="6" style="padding:0;">
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+            <tr>
+              <td style="${F}width:50%;text-align:center;padding:22px 16px 10px;vertical-align:bottom;">
+                <div style="${F}white-space:nowrap;">ลงชื่อ..................................................${isR?'ผู้รับเงิน':'ผู้รับสินค้า'}</div>
+                <div style="${F}margin-top:8px;white-space:nowrap;">(...................................................)</div>
+                <div style="${F}margin-top:4px;font-size:9pt;white-space:nowrap;">วันที่............................................</div>
+              </td>
+              <td style="${F}width:50%;text-align:center;padding:22px 16px 10px;vertical-align:bottom;border-left:1px dashed #ccc;">
+                <div style="${F}white-space:nowrap;">ลงชื่อ..................................................${isR?'ผู้จ่ายเงิน':'ผู้ส่งสินค้า'}</div>
+                <div style="${F}margin-top:8px;white-space:nowrap;">( ${SELLER.contact} )</div>
+                <div style="${F}margin-top:4px;font-size:9pt;white-space:nowrap;">วันที่............................................</div>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </tfoot>
 
-  </table>
-</div>`;
+  </table>`;
 }
 function printInvoice(order,docTypeId){
   const pa=document.getElementById('printArea');
-  // CSS พิเศษสำหรับการพิมพ์ — thead repeat ทุกหน้า
   const printCSS=`<style>
     @media print {
-      @page { margin: 12mm 14mm; size: A4; }
-      body { margin: 0; }
-      table { border-collapse: collapse; }
-      thead { display: table-header-group; }
-      tfoot { display: table-footer-group; }
-      tr { page-break-inside: avoid; }
-      .page-doc { page-break-after: always; }
-      .page-doc:last-child { page-break-after: auto; }
+      @page { margin: 10mm 12mm; size: A4 portrait; }
+      body { margin: 0; background: white; }
+      table { border-collapse: collapse; width: 100%; }
+      thead { display: table-header-group !important; }
+      tfoot { display: table-footer-group !important; }
+      tbody { display: table-row-group !important; }
+      tr    { page-break-inside: avoid; }
+      .invoice-copy { page-break-before: always; }
     }
   </style>`;
-  pa.innerHTML=printCSS+`<div style="font-family:Sarabun,Arial,sans-serif;">
-    <div class="page-doc">${buildInvoiceHTML(order,docTypeId,false)}</div>
-    <div class="page-doc">${buildInvoiceHTML(order,docTypeId,true)}</div>
-  </div>`;
+  const orig = buildInvoiceHTML(order, docTypeId, false);
+  const copy = buildInvoiceHTML(order, docTypeId, true);
+  pa.innerHTML = printCSS
+    + `<div style="font-family:Sarabun,Arial,sans-serif;">${orig}</div>`
+    + `<div class="invoice-copy" style="font-family:Sarabun,Arial,sans-serif;">${copy}</div>`;
   pa.style.display='block';
   document.getElementById('app').style.display='none';
   window.print();
